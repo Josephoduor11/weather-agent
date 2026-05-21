@@ -1,11 +1,6 @@
-import os
-from langchain_groq import ChatGroq
-from langchain_openai import ChatOpenAI
-from langchain_openrouter import ChatOpenRouter
 
-from groq import Groq
-from google import genai
-from langchain_google_genai import ChatGoogleGenerativeAI
+import os
+from langchain_openrouter import ChatOpenRouter
 from langchain.agents import create_agent
 from dotenv import load_dotenv, find_dotenv
 from tools import weather_tool, forecast_tool
@@ -19,7 +14,7 @@ tools = [weather_tool, forecast_tool]
 
 llm = ChatOpenRouter(
     base_url="https://openrouter.ai/api/v1",
-    model="nvidia/nemotron-3-nano-30b-a3b:free",  # Free tier model
+    model="nvidia/nemotron-3-nano-30b-a3b:free",
     tools=tools,
     temperature=0.5,
     api_key=api_key
@@ -59,3 +54,4 @@ while True:
     chat_history.append(AIMessage(content=ai_message))
 
     print(f"\nAI: {ai_message}")
+
