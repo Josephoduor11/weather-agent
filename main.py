@@ -1,29 +1,45 @@
 import os
 from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
+from langchain_openrouter import ChatOpenRouter
+
 from groq import Groq
+from google import genai
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from dotenv import load_dotenv, find_dotenv
-from tools import weather_tool
-
+from tools import weather_tool, forecast_tool
+from langchain_core.messages import HumanMessage, AIMessage
 
 load_dotenv(find_dotenv())
 
-api_key = os.getenv("GROQ_API_KEY")
+api_key = os.getenv("OPENROUTE_API_KEY")
 
-tools = [weather_tool]
+tools = [weather_tool, forecast_tool]
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
+llm = ChatOpenRouter(
+    base_url="https://openrouter.ai/api/v1",
+    model="nvidia/nemotron-3-nano-30b-a3b:free",  # Free tier model
     tools=tools,
     temperature=0.5,
     api_key=api_key
 
 )
 
-user_input = input("I am a Weather Ai what can i help you with\n")
 
-if "weather" in user_input.lower():
-    city = user_input.split("in")[-1].strip()
+chat_history = []
+
+print("===I am a Weather Ai what can i help you with===\n")
+while True:
+
+    user_input = input("You: ")
+
+    if "exit" in user_input.lower() or "quit" in user_input.lower():
+        print("\nGoodbye! ")
+
+        chat_history.append(HumanMessage(content=user_input))
+
+        break
 
     agent = create_agent(
         model=llm,
@@ -33,11 +49,13 @@ if "weather" in user_input.lower():
 
     )
 
+    chat_history.append(HumanMessage(content=user_input))
+
     research_response = agent.invoke({
-        "messages": [("user", user_input)]
+        "messages": chat_history
     })
 
-    print(f"\n{research_response["messages"][-1].content}")
+    ai_message = research_response["messages"][-1].content
+    chat_history.append(AIMessage(content=ai_message))
 
-else:
-    print("I only answer weather realated prompts")
+    print(f"\nAI: {ai_message}")

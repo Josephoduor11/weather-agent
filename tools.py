@@ -46,3 +46,46 @@ def weather_tool(city: str) -> str:
 
     except Exception as e:
         return f"Error getting weather for {city}: {str(e)}"
+
+
+@tool
+def forecast_tool(city: str) -> str:
+    """
+    Get the 5-day weather FORECAST for a specified city.
+    Use this for future weather predictions (tomorrow, next days).
+    """
+    try:
+        # 5-day forecast endpoint (3-hour intervals)
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        # Get tomorrow's forecast (first entry after today)
+        # The forecast returns 8 entries per day (every 3 hours)
+        tomorrow_entries = []
+        current_date = None
+        tomorrow_forecast = []
+
+        for forecast in data['list']:
+            date = forecast['dt_txt'].split()[0]
+            if current_date is None:
+                current_date = date
+                continue
+            if date != current_date:
+                tomorrow_forecast.append(forecast)
+                if len(tomorrow_forecast) >= 4:  # Get 4 entries (12 hours) of tomorrow
+                    break
+
+        if not tomorrow_forecast:
+            return f"No forecast data available for {city}"
+
+        # Calculate average for tomorrow
+        temps = [f['main']['temp'] for f in tomorrow_forecast]
+        avg_temp = sum(temps) / len(temps)
+        conditions = tomorrow_forecast[0]['weather'][0]['description']
+
+        return f"Forecast for {city} tomorrow: {avg_temp:.1f}°C, {conditions}"
+
+    except Exception as e:
+        return f"Error getting forecast for {city}: {str(e)}"
